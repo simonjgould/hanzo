@@ -1,0 +1,14 @@
+pipeline {
+    agent any
+    stages {
+      stage('build and test'){
+        sh 'build'
+      }
+      stage('deploy'){
+        sh 'deploy'
+      }
+      stage('verify'){
+        sh 'verify'
+      }
+    }
+}

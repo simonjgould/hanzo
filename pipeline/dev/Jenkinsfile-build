@@ -1,0 +1,16 @@
+pipeline {
+    agent any
+    stages {
+        stage('unit test') {
+            sh 'echo unit test'
+        }
+        stage('static analysis'){
+            sh 'echo sonar'
+            sh 'on quality gate failure fail pipeline'
+        }
+        stage('dockerize and push to repo'){
+          sh 'dockerize'
+          sh 'image tag'
+        }
+    }
+}
