@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 import datetime
 import json
 
@@ -15,6 +15,19 @@ models = [Question]
 test_db = SqliteDatabase(':memory:')
 
 
+class FakeRedis:
+    def __init__(self):
+        self.cache = {}
+
+    def incr(self, key, amount):
+        if key not in self.cache:
+            self.cache[key] = 0
+        self.cache[key] += amount
+
+    def get(self, key):
+        return str(self.cache[key]).encode()
+
+
 class PollApiIntTest(TestCase):
     def setUp(self):
         with patch.dict(settings.os.environ, {
@@ -23,15 +36,21 @@ class PollApiIntTest(TestCase):
             "DB_NAME": "test_name",
             "DB_USER": "test_user",
             "DB_PASSWORD": "test_password",
-            "VERSION_ID": "test"
+            "VERSION_ID": "test",
         }):
-            with patch('dao.db.PostgresqlDatabase') as mock_pg_db:
-                mock_pg_db.return_value = test_db
-                app = poll_api.create_app()
+            with patch.dict(poll_api.os.environ, {
+                "REDIS_HOST": "test_redis_host",
+                "REDIS_PORT": "1234"
+            }):
+                with patch('dao.db.PostgresqlDatabase') as mock_pg_db:
+                    with patch('poll_api.Redis') as mock_redis:
+                        mock_pg_db.return_value = test_db
+                        mock_redis.return_value = FakeRedis()
+                        app = poll_api.create_app()
 
         mock_pg_db.assert_called_once_with("test_name", user="test_user", password="test_password",
                                            host="test_host", port="test_port")
-        print(str(test_db.get_tables()))
+        mock_redis.assert_called_once_with(host='test_redis_host', port=1234, db=0)
         app.config['TESTING'] = True
         self.client = app.test_client()
 
@@ -80,3 +99,19 @@ class PollApiIntTest(TestCase):
                 'id': question.id,
                 'pub_date': question.pub_date.strftime('%Y-%m-%d')
             })
+
+    def test_given_multiple_hits_on_questions_when_get_on_hits_endpoint_then_the_correct_number_of_hits_returned(
+            self):
+        test_date = datetime.datetime.now().date()
+        payload = {
+            "question_text": "test question post",
+            "pub_date": str(test_date)
+        }
+        self.client.post('/polls/questions/', data=json.dumps(payload), content_type='application/json')
+        self.client.get('/polls/questions/')
+        self.client.get('/polls/questions/')
+
+        rv = self.client.get('/hits/')
+        self.assertDictEqual({
+            "hits": 3
+        }, json.loads(rv.data.decode()))

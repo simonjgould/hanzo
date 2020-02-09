@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
 
 echo "verifying image tests"
 
@@ -22,7 +22,18 @@ get_response=$(curl \
 echo ${get_response}
 
 if [[ "[${post_response}]" != "${get_response}" ]]; then
-    echo "failed to verify service behavior"
+    echo "failed to verify questions behaviour"
     exit 1
 fi
 
+get_hits=$(curl \
+  --fail \
+  --header "Content-Type: application/json" \
+  --request GET \
+  "http://127.0.0.1:$1/hits/")
+echo ${get_hits}
+
+if [[ '{"hits": "2"}' != "${get_hits}" ]]; then
+    echo "failed to verify hits behaviour"
+    exit 1
+fi
