@@ -33,7 +33,7 @@ get_hits=$(curl \
   "http://127.0.0.1:$1/hits/")
 echo ${get_hits}
 
-if [[ '{"hits": "2"}' != "${get_hits}" ]]; then
+if [[ '{"hits": 2}' != "${get_hits}" ]]; then
     echo "failed to verify hits behaviour"
     exit 1
 fi
