@@ -1,14 +1,52 @@
 pipeline {
     agent any
     stages {
-      stage('build and test'){
-        sh 'build'
-      }
-      stage('deploy'){
-        sh 'deploy'
-      }
-      stage('verify'){
-        sh 'verify'
-      }
+        stage('build and test') {
+            steps {
+                build job: "dev-build/${env.BRANCH_NAME}", propagate: true, wait: true
+            }
+        }
+        stage('deploy') {
+            steps {
+                build job: "dev-deploy/${env.BRANCH_NAME}",
+                        propagate: true,
+                        wait: true,
+                        parameters: [[$class: 'StringParameterValue', name: 'IMAGE_TAG', value: "${BRANCH_NAME}.latest"], [$class: 'StringParameterValue', name: 'ACCOUNT_ID', value: "dev_account_id"]]
+            }
+        }
+        stage('verify') {
+            steps {
+                build job: "dev-test/${env.BRANCH_NAME}",
+                        propagate: true,
+                        wait: true,
+                        parameters: [[$class: 'StringParameterValue', name: 'TIER', value: "DEV"], [$class: 'StringParameterValue', name: 'ACCOUNT_ID', value: "dev_account_id"]]
+            }
+        }
+        stage('Approve UAT') {
+            when {
+                expression { "${env.BRANCH_NAME}" == 'master' }
+            }
+            steps {
+                input "Tag release candidate?"
+                script {
+                    tag_rc = VersionNumber([
+                            versionNumberString: '${BUILD_DATE_FORMATTED, "yyyyMMdd"}.${BUILDS_TODAY}.${BUILD_NUMBER}',
+                            versionPrefix      : 'rc.'])
+                    app = docker.image("simonjgould/hanzo-test-poll-api:${env.BRANCH_NAME}.latest")
+                    docker.withRegistry('', 'docker-hub') {
+                        app.push("${tag_rc}")
+                    }
+                }
+
+                sh "git tag -a ${tag_rc} -m 'release candidate'"
+                withCredentials([[$class          : 'UsernamePasswordMultiBinding',
+                                  credentialsId   : 'Git',
+                                  usernameVariable: 'GIT_USERNAME',
+                                  passwordVariable: 'GIT_PASSWORD']]) {
+                    sh('chmod +x pipeline/tools/tag_script.sh')
+                    sh("pipeline/tools/tag_script.sh $GIT_USERNAME $GIT_PASSWORD")
+                }
+            }
+        }
     }
 }

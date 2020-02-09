@@ -1,0 +1,20 @@
+pipeline {
+    agent any
+    parameters {
+        string(name: 'TIER', defaultValue: 'DEV', description: 'the tier/environment being build DEV, STAGING, PRODUCTION')
+        string(name: 'ACCOUNT_ID', defaultValue: 'dev_account_id', description: 'aws account id')
+    }
+    stages {
+        stage('verify') {
+            steps {
+                dir('e2e/') {
+                    sh "chmod +x test.sh"
+                    sh "chmod +x acceptance_test.sh"
+                    sh "chmod +x security_and_performance_tests.sh"
+                    sh "chmod +x smoke_tests.sh"
+                    sh "./test.sh ${params.TIER} ${params.ACCOUNT_ID}"
+                }
+            }
+        }
+    }
+}

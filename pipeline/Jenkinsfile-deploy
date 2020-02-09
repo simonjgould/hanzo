@@ -1,0 +1,17 @@
+pipeline {
+    agent any
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'docker image tag for service')
+        string(name: 'ACCOUNT_ID', defaultValue: 'dev_account_id', description: 'aws account id')
+    }
+    stages {
+        stage('deploy') {
+            steps {
+                dir('iac/') {
+                    sh "chmod +x deploy_iac.sh"
+                    sh "./deploy_iac.sh ${params.IMAGE_TAG} ${params.ACCOUNT_ID}"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,8 @@
+.coverage
+.scannerwork
+Dockerfile
+__pycache__
+coverage.xml
+nose2-junit.xml
+test
+.dockerignore

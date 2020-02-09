@@ -1,0 +1,84 @@
+pipeline {
+    agent any
+    stages {
+        stage('unit test') {
+            steps {
+                withPythonEnv('/usr/bin/python3') {
+                    sh 'python --version'
+                    dir('services/poll-api/') {
+                        sh 'pip install -r test/requirements.txt'
+                        sh 'python --version'
+                        sh 'nose2 --with-cov --coverage-report xml --plugin nose2.plugins.junitxml --junit-xml'
+                    }
+                }
+            }
+        }
+        stage('static analysis') {
+            steps {
+                script {
+                    sonar_scanner = tool 'Sonar'
+                }
+                withSonarQubeEnv('Sonar') {
+                    dir('services/poll-api/') {
+                        sh "${sonar_scanner}/bin/sonar-scanner \
+                          -Dsonar.projectKey=simonjgould_hanzo \
+                          -Dsonar.organization=simonjgould \
+                          -Dsonar.python.xunit.reportPaths=nose2-junit.xml \
+                          -Dsonar.python.coverage.reportPaths=coverage.xml"
+                    }
+                }
+            }
+        }
+        stage('build image') {
+            steps {
+                dir('services/poll-api/') {
+                    script {
+                        app = docker.build("simonjgould/hanzo-test-poll-api")
+                    }
+                }
+            }
+        }
+        stage('verify image') {
+            steps {
+                dir('services/verify/') {
+                    script {
+                        postgres = docker.image('postgres')
+                        postgres.withRun('-e "POSTGRES_PASSWORD=test_pw" -e "POSTGRES_USER=test_user" -e "POSTGRES_DB=test_db" -p 5432:5432') { p ->
+                            try {
+                                sh "chmod +x verify_pg_ready.sh"
+                                sh "./verify_pg_ready.sh 5432"
+                                app.withRun("--link ${p.id}:db -e 'DB_HOST=db' -e 'DB_PORT=5432' -e 'DB_NAME=test_db' -e 'DB_USER=test_user' -e 'DB_PASSWORD=test_pw' -e 'VERSION_ID=test' -e 'FLASK_ENV=development' -p 8000:8000") { s ->
+                                    try {
+                                        sh "chmod +x verify_image.sh"
+                                        sh "./verify_image.sh 8000"
+                                    } catch (ex) {
+                                        sh "docker logs ${s.id}"
+                                        throw ex
+                                    }
+                                }
+                            } catch (e) {
+                                sh "docker logs ${p.id}"
+                                throw e
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage('push image') {
+            steps {
+                script {
+                    docker.withRegistry('', 'docker-hub') {
+                        app.push("${BRANCH_NAME}.${BUILD_NUMBER}")
+                        app.push("${BRANCH_NAME}.latest")
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

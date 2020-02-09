@@ -65,5 +65,18 @@ along with any infrastructure changes required.
   * basic full e2e smoke tests are run
   
 ### CI/CD
-* the builds run on a Jenkins instance wiith all apropriate plugins installed and configured:
-  * credentials, build environments, SSO, etc
+* the builds run on a Jenkins instance with all appropriate plugins installed and configured:
+  * standard plugins
+  * pyenv plugin
+  * version number plugin
+  * docker and python 3.8.1. installed on server
+  
+### Sonar static analysis
+* Extended SonarWay Quality Profile:
+  * Added all blockers
+  * Added Critical and Major wrt to complexity, file and function size
+  
+#TODO
+## redis
+## set up jenk jobs for tags
+## try the release stuff
