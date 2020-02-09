@@ -45,10 +45,10 @@ pipeline {
                         postgres = docker.image('postgres')
                         redis = docker.image('redis')
                         postgres.withRun('-e "POSTGRES_PASSWORD=test_pw" -e "POSTGRES_USER=test_user" -e "POSTGRES_DB=test_db" -p 5432:5432') { p ->
+                            sh "chmod +x verify_pg_ready.sh"
+                            sh "./verify_pg_ready.sh 5432"
                             redis.inside() { r ->
                                 try {
-                                    sh "chmod +x verify_pg_ready.sh"
-                                    sh "./verify_pg_ready.sh 5432"
                                     app.withRun("--link ${p.id}:db --link ${r.id}:redis -e 'REDIS_HOST=redis' -e 'REDIS_PORT=6379' -e 'DB_HOST=db' -e 'DB_PORT=5432' -e 'DB_NAME=test_db' -e 'DB_USER=test_user' -e 'DB_PASSWORD=test_pw' -e 'VERSION_ID=test' -e 'FLASK_ENV=development' -p 8000:8000") { s ->
                                         try {
                                             sh "chmod +x verify_image.sh"
