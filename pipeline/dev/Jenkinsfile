@@ -6,7 +6,7 @@ pipeline {
                 build job: "dev-build",
                         propagate: false,
                         wait: false
-                sh "sleep 2"
+                sh "sleep 4"
                 build job: "dev-build/${env.BRANCH_NAME}", propagate: true, wait: true
             }
         }
@@ -15,7 +15,7 @@ pipeline {
                 build job: "dev-deploy",
                         propagate: false,
                         wait: false
-                sh "sleep 2"
+                sh "sleep 4"
                 build job: "dev-deploy/${env.BRANCH_NAME}",
                         propagate: true,
                         wait: true,
@@ -27,7 +27,7 @@ pipeline {
                 build job: "dev-deploy",
                         propagate: false,
                         wait: false
-                sh "sleep 2"
+                sh "sleep 4"
                 build job: "dev-test/${env.BRANCH_NAME}",
                         propagate: true,
                         wait: true,
