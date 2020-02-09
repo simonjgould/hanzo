@@ -24,7 +24,7 @@ pipeline {
         }
         stage('verify') {
             steps {
-                build job: "dev-deploy",
+                build job: "dev-test",
                         propagate: false,
                         wait: false
                 sh "sleep 4"
