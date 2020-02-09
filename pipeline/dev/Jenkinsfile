@@ -3,11 +3,19 @@ pipeline {
     stages {
         stage('build and test') {
             steps {
+                build job: "dev-build",
+                        propagate: false,
+                        wait: false
+                sh "sleep 2"
                 build job: "dev-build/${env.BRANCH_NAME}", propagate: true, wait: true
             }
         }
         stage('deploy') {
             steps {
+                build job: "dev-deploy",
+                        propagate: false,
+                        wait: false
+                sh "sleep 2"
                 build job: "dev-deploy/${env.BRANCH_NAME}",
                         propagate: true,
                         wait: true,
@@ -16,6 +24,10 @@ pipeline {
         }
         stage('verify') {
             steps {
+                build job: "dev-deploy",
+                        propagate: false,
+                        wait: false
+                sh "sleep 2"
                 build job: "dev-test/${env.BRANCH_NAME}",
                         propagate: true,
                         wait: true,

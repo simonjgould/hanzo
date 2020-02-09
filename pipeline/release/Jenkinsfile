@@ -8,26 +8,38 @@ pipeline {
                 }
             }
             steps {
-                build job: "dev-deploy/${env.BRANCH_NAME}",
+                build job: "release-deploy",
+                        propagate: false,
+                        wait: false
+                sh "sleep 2"
+                build job: "release-deploy/${env.TAG_NAME}",
                         propagate: true,
                         wait: true,
-                        parameters: [[$class: 'StringParameterValue', name: 'IMAGE_TAG', value: "${BRANCH_NAME}"], [$class: 'StringParameterValue', name: 'ACCOUNT_ID', value: "staging_account_id"]]
+                        parameters: [[$class: 'StringParameterValue', name: 'IMAGE_TAG', value: "${env.TAG_NAME}"], [$class: 'StringParameterValue', name: 'ACCOUNT_ID', value: "staging_account_id"]]
 
             }
         }
         stage('deploy release to production') {
             when { tag "release.*" }
             steps {
-                build job: "dev-deploy/${env.BRANCH_NAME}",
+                build job: "release-deploy",
+                        propagate: false,
+                        wait: false
+                sh "sleep 2"
+                build job: "release-deploy/${env.TAG_NAME}",
                         propagate: true,
                         wait: true,
-                        parameters: [[$class: 'StringParameterValue', name: 'IMAGE_TAG', value: "${BRANCH_NAME}"], [$class: 'StringParameterValue', name: 'ACCOUNT_ID', value: "production_account_id"]]
+                        parameters: [[$class: 'StringParameterValue', name: 'IMAGE_TAG', value: "${env.TAG_NAME}"], [$class: 'StringParameterValue', name: 'ACCOUNT_ID', value: "production_account_id"]]
             }
         }
         stage('verify release candidate') {
             when { tag "rc.*" }
             steps {
-                build job: "dev-test/${env.BRANCH_NAME}",
+                build job: "release-test",
+                        propagate: false,
+                        wait: false
+                sh "sleep 2"
+                build job: "release-test/${env.TAG_NAME}",
                         propagate: true,
                         wait: true,
                         parameters: [[$class: 'StringParameterValue', name: 'TIER', value: "STAGING"], [$class: 'StringParameterValue', name: 'ACCOUNT_ID', value: "staging_account_id"]]
@@ -37,7 +49,11 @@ pipeline {
         stage('verify release') {
             when { tag "release.*" }
             steps {
-                build job: "dev-test/${env.BRANCH_NAME}",
+                build job: "release-test",
+                        propagate: false,
+                        wait: false
+                sh "sleep 2"
+                build job: "release-test/${env.TAG_NAME}",
                         propagate: true,
                         wait: true,
                         parameters: [[$class: 'StringParameterValue', name: 'TIER', value: "PROD"], [$class: 'StringParameterValue', name: 'ACCOUNT_ID', value: "production_account_id"]]
@@ -54,7 +70,7 @@ pipeline {
                     tag_rc = VersionNumber([
                             versionNumberString: '${BUILD_DATE_FORMATTED, "yyyyMMdd"}.${BUILDS_TODAY}.${BUILD_NUMBER}',
                             versionPrefix      : 'release.'])
-                    app = docker.image("simonjgould/hanzo-test-poll-api:${env.BRANCH_NAME}.latest")
+                    app = docker.image("simonjgould/hanzo-test-poll-api:${env.TAG_NAME}")
                     docker.withRegistry('', 'docker-hub') {
                         app.push("${tag_rc}")
                     }
