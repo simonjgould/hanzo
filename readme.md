@@ -1,4 +1,4 @@
-#Hanzo Pipeline
+# Hanzo Pipeline
 
 ## Assumptions
 
@@ -76,20 +76,20 @@ along with any infrastructure changes required.
   * Added all blockers
   * Added Critical and Major wrt to complexity, file and function size
   
-#TODO
+# TODO
 * Set up Proper SSL certificate instead of self signed on Jenkins server
 * Add branch specifiers to sonar scanner
 * Sonarcloud.io Webhook set up on server for quality Gates (requires valid Certficate) 
 * Github Webhook set up on server: to add stability for build job triggers
 
 
-#Resources:
+# Resources:
 * Jenkins server hosted by Kamatera Cloud: https://212-115-109-53.cloud-xip.io/
   * Note: self signed certificate
 * SonarCloud.io project for static analysis: https://sonarcloud.io/dashboard?id=simonjgould_hanzo
 * Dockerhub repository for artefacts: https://hub.docker.com/repository/docker/simonjgould/hanzo-test-poll-api
 
-#Refs:
+# Refs:
 * Flask service based on https://www.agiliq.com/blog/2018/10/flask-docker/
   * Note: TDD approach taken when adding poll api elements & docker config and behaviours refined
 * Assumptions and Approach informed by state of dev ops Accelerate (Book and report) wrt to 4 key metrics: https://cloudplatformonline.com/rs/248-TPC-286/images/DORA-State%20of%20DevOps.pdf
