@@ -2,7 +2,7 @@ pipeline {
     agent any
     stages {
         stage('deploy release candidate to staging') {
-            when { tag "rc.*" }
+            when { tag "refs/tags/rc.*" }
             steps {
                 build job: "dev-deploy/${env.BRANCH_NAME}",
                         propagate: true,
